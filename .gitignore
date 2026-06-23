@@ -12,3 +12,13 @@ research/tcontool
 # scratch
 *.pid
 /tmp/
+
+# Swift build output
+/.build/
+/dist/
+.swiftpm/
+
+# stray compiler intermediates
+*.d
+*.dia
+*.swiftdeps
