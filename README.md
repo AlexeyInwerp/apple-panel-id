@@ -12,14 +12,36 @@ reads that memory and republishes the panel's identity record in the I/O Registr
 Useful for repair/refurb work: a genuine, factory-serialized Apple panel exposes a full,
 well-formed identity record; a non-serialized or aftermarket panel typically does not.
 
+## Install
+
+Pre-compiled for Apple Silicon (arm64). Downloads are **unsigned**, so macOS quarantines them on
+first run — clear it once as shown.
+
+**CLI (`panelid`):**
+
+```bash
+# download panelid-v0.1.0-arm64.tar.gz from Releases, then:
+tar -xzf panelid-v0.1.0-arm64.tar.gz
+xattr -dr com.apple.quarantine panelid
+./panelid          # identity + verdict
+./panelid map      # on-panel TCON memory map
+./panelid --json   # machine-readable
+# optionally: sudo mv panelid /usr/local/bin/
+```
+
+**GUI (`PanelID.app`):** download `PanelID-v0.1.0-arm64.zip`, unzip, then **right-click → Open**
+the app the first time (or `xattr -dr com.apple.quarantine PanelID.app`).
+
+**Zero-install (no download):** read the raw record straight from the I/O Registry:
+
+```bash
+ioreg -lw0 -r -n disp0 | grep Panel_ID
+```
+
 ## Quick start
 
 ```bash
-# raw, one line:
-ioreg -lw0 -r -n disp0 | grep Panel_ID
-
-# parsed, with a genuine/suspect verdict:
-./panelid.sh
+./panelid
 ```
 
 Example output (serial masked):
@@ -45,7 +67,7 @@ Heuristic verdict       : LIKELY GENUINE
 
 ## Determining if a panel is genuine
 
-Run `panelid.sh` on a **known-genuine** Mac to establish a baseline, then on the **suspect**
+Run `panelid` on a **known-genuine** Mac to establish a baseline, then on the **suspect**
 Mac and compare. A non-serialized / aftermarket / refurbished panel commonly shows one of:
 
 - `Panel_ID` **absent** entirely,
@@ -66,16 +88,26 @@ yourself across multiple panels. Don't make irreversible decisions on an inferre
 
 ## Tools
 
-| File | What it does |
+| Tool | What it does |
 |------|--------------|
-| `panelid.sh` | Reads `Panel_ID`, splits the fields, prints a genuine/suspect verdict. |
-| `panelmap.py` | Lists the panel's TCON memory components (the on-panel I²C/SPI memories) and their bus addresses, as enumerated by the I/O Registry. |
-| `research/` | Exploration of the *gated* programmatic paths (private framework + IOKit user client). Kept for documentation — see `research/README.md`. These do **not** return data on a normally-booted Mac; `panelid.sh` is the method that works. |
+| `panelid` (CLI) | Reads `Panel_ID`, splits the fields, prints a genuine/suspect verdict. `panelid map` lists the on-panel TCON memories (I²C/SPI bus + address); `--json` emits machine-readable output. |
+| `PanelID.app` (GUI) | The same two capabilities in a small native window — an **Identity** view (verdict) and a **TCON Map** view. |
+| `research/` | The original `panelid.sh` / `panelmap.py` reference scripts, plus exploration of the *gated* programmatic paths (private framework + IOKit user client). See `research/README.md`. |
+
+## Build from source
+
+Requires the Xcode Command Line Tools (Swift 6+) — no full Xcode needed.
+
+```bash
+swift run paneltests   # run the PanelKit unit-test harness
+./build.sh             # produces dist/panelid + dist/PanelID.app and release archives
+```
 
 ## Requirements
 
-- Apple Silicon Mac with a built-in display.
-- macOS (uses `ioreg`, `python3`, `zsh` — all stock).
+- Apple Silicon Mac with a built-in display, macOS 13+.
+- The pre-built binaries are arm64 and use only stock `ioreg`. Building from source needs the
+  Swift toolchain (Command Line Tools). The reference scripts in `research/` use `zsh` / `python3`.
 
 ## Caveats
 

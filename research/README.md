@@ -4,7 +4,13 @@ These are the dead ends I walked before finding that `Panel_ID` in the I/O Regis
 exposes everything needed. They're kept because they document *why* the simple method is the
 right one, and they're small, self-contained examples of poking at private display interfaces.
 
-**None of these return panel data on a normally-booted Mac.** Use `../panelid.sh`.
+**None of these return panel data on a normally-booted Mac.** Use the compiled `panelid` CLI.
+
+> `panelid.sh` and `panelmap.py` also live in this directory. They are the original shell / Python
+> reference implementations of the method that works. The shipping tool is the compiled **`panelid`**
+> CLI (built from `../Sources/`), which reproduces their behavior; the scripts remain as readable,
+> dependency-free documentation. `panelid.sh` reads and parses `Panel_ID`; `panelmap.py` lists the
+> on-panel TCON memories.
 
 | File | What it probes | Result |
 |------|----------------|--------|
