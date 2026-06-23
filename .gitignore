@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# compiled research binaries (built from research/*.c / *.m)
+research/probe
+research/objcdump
+research/holder
+research/tcontool
+*.o
+*.dSYM/
+
+# scratch
+*.pid
+/tmp/
