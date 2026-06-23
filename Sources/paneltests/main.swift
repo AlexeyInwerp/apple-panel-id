@@ -106,10 +106,51 @@ func testTCON() {
     }
 }
 
+// MARK: - Report formatters (Task 3)
+
+func testReports() {
+    let genuine = "F0Y20ABCDEF609B+000000004M22F2+PROD+B000000000000"
+    let id = parsePanelID(genuine)
+
+    let human = identityReport(id)
+    ok(human.contains("Panel_ID (raw, \(genuine.count) chars):"), "human header")
+    ok(human.contains("[0] len=15"), "human field len")
+    ok(human.contains("Serial-number field [0] : F0Y20ABCDEF609B"), "human serial")
+    ok(human.contains("Heuristic verdict       : LIKELY GENUINE"), "human verdict")
+    ok(identityReport(parsePanelID(nil)).contains("<ABSENT>"), "human absent")
+
+    let json = identityJSON(id)
+    if let obj = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any] {
+        eq(obj["present"] as? Bool, true, "json present")
+        eq(obj["verdict"] as? String, "likely_genuine", "json verdict")
+        eq(obj["serial"] as? String, "F0Y20ABCDEF609B", "json serial")
+        eq(obj["charCount"] as? Int, genuine.count, "json charCount")
+    } else {
+        failures += 1; print("FAIL: identity JSON did not parse")
+    }
+
+    let c = TCONComponent(name: "tcon0", bus: "I2C", deviceType: "eeprom",
+                          addr: 0x50, size: 0x100, protection: 1, verify: 0)
+    let tHuman = tconReport([c])
+    ok(tHuman.contains("I2C/eeprom"), "tcon human busType")
+    ok(tHuman.contains("0x50"), "tcon human addr")
+    ok(tconReport([]).lowercased().contains("no "), "tcon empty message")
+
+    let tJSON = tconJSON([c])
+    if let arr = try? JSONSerialization.jsonObject(with: Data(tJSON.utf8)) as? [[String: Any]] {
+        eq(arr.count, 1, "tcon json count")
+        eq(arr.first?["bus"] as? String, "I2C", "tcon json bus")
+        eq(arr.first?["addr"] as? Int, 0x50, "tcon json addr")
+    } else {
+        failures += 1; print("FAIL: tcon JSON did not parse")
+    }
+}
+
 // MARK: - Runner
 
 testIdentity()
 testTCON()
+testReports()
 
 print("\nchecks: \(checks)   failures: \(failures)")
 exit(failures == 0 ? 0 : 1)
