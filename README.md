@@ -1,5 +1,9 @@
 # apple-panel-id
 
+> **In plain terms:** this is basically an over-slopped `ioreg -lw0 -r -n disp0 | grep Panel_ID` —
+> but wrapped as a simple app (and CLI) so you can quickly check whether a Mac's display is
+> genuine, or at least serialized, or not.
+
 Read the **internal display panel identity** of an Apple Silicon Mac — including the panel
 serial number and a genuine/aftermarket indicator — straight from the I/O Registry. No root,
 no entitlements, no disassembly, no hardware.
