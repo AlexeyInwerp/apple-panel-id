@@ -48,9 +48,68 @@ func testIdentity() {
     eq(Verdict.absent.exitCode, 2, "exit absent")
 }
 
+// MARK: - TCON parsing (Task 2)
+
+func testTCON() {
+    // I2C component with full reg (addr 0x50, size 0x100), Data-typed name/device_type.
+    let i2c: [String: Any] = [
+        "name": Data("tcon0\u{0}".utf8),
+        "device_type": Data("eeprom\u{0}".utf8),
+        "reg": Data([0x50, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00]),
+        "interface": Data([0x03, 0x00, 0x00, 0x00]),
+        "protection": Data([0x01, 0x00, 0x00, 0x00]),
+        "verify": Data([0x00, 0x00, 0x00, 0x00]),
+    ]
+    guard let data = try? PropertyListSerialization.data(
+        fromPropertyList: [i2c] as [Any], format: .xml, options: 0),
+          let rows = try? parseTCON(data) else {
+        failures += 1; print("FAIL: I2C plist did not parse"); return
+    }
+    eq(rows.count, 1, "i2c count")
+    if let r = rows.first {
+        eq(r.name, "tcon0", "i2c name")
+        eq(r.deviceType, "eeprom", "i2c device_type")
+        eq(r.bus, "I2C", "i2c bus")
+        eq(r.busType, "I2C/eeprom", "i2c busType")
+        eq(r.addr, 0x50, "i2c addr")
+        eq(r.size, 0x100, "i2c size")
+        eq(r.protection, 1, "i2c protection")
+        eq(r.verify, 0, "i2c verify")
+    }
+
+    // SPI, short reg (< 8 bytes -> addr/size 0), String-typed name, missing protection/verify.
+    let spi: [String: Any] = [
+        "name": "spi0",
+        "device_type": "flash",
+        "reg": Data([0x01, 0x02]),
+        "interface": Data([0x00]),
+    ]
+    if let data = try? PropertyListSerialization.data(
+        fromPropertyList: [spi] as [Any], format: .binary, options: 0),
+       let rows = try? parseTCON(data), let r = rows.first {
+        eq(r.bus, "SPI", "spi bus")
+        eq(r.name, "spi0", "spi name (string)")
+        eq(r.addr, 0, "spi addr (short reg)")
+        eq(r.size, 0, "spi size (short reg)")
+        eq(r.protection, 0, "spi protection (missing key)")
+    } else {
+        failures += 1; print("FAIL: SPI plist did not parse")
+    }
+
+    // Empty array is valid.
+    if let data = try? PropertyListSerialization.data(
+        fromPropertyList: [] as [Any], format: .xml, options: 0),
+       let rows = try? parseTCON(data) {
+        eq(rows.count, 0, "empty tcon array")
+    } else {
+        failures += 1; print("FAIL: empty plist did not parse")
+    }
+}
+
 // MARK: - Runner
 
 testIdentity()
+testTCON()
 
 print("\nchecks: \(checks)   failures: \(failures)")
 exit(failures == 0 ? 0 : 1)
